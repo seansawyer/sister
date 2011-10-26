@@ -1,0 +1,17 @@
+{application, sister,
+ [
+  {description, "Erlang client for the Twitter site streams API"},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { sister_app, []}},
+  {env, [{twitter_ss_endpoint, "https://sitestream.twitter.com/2b/site.json"},
+         {twitter_app_id, ""},
+         {twitter_consumer_key, ""},
+         {twitter_consumer_secret, ""},
+         {twitter_token, ""},
+         {twitter_token_secret, ""}]}
+ ]}.

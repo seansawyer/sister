@@ -1,0 +1,3 @@
+deps
+ebin/*.beam
+src/sister.app.src.mine
