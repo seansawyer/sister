@@ -1,9 +1,10 @@
 -module(sister_util).
 
 -export([connect/1,
-         consume/1]).
+         ensure_deps/1,
+         ensure_started/1]).
 
-connect(UserIds) when length(UserIds) > 100 ->
+connect(UserIds) when length(UserIds) =< 25 ->
     {ok, Url} = application:get_env(sister, twitter_ss_endpoint),
     {ok, ConsumerKey} = application:get_env(sister, twitter_consumer_key),
     {ok, ConsumerSecret} = application:get_env(sister, twitter_consumer_secret),
@@ -14,18 +15,31 @@ connect(UserIds) when length(UserIds) > 100 ->
     Opts = [{sync, false}, {stream, self}],
     oauth:get(Url, [{"follow", Follow}], Consumer, Token, TokenSecret, Opts).
 
-consume(RequestId) ->
-    receive
-        {http, {RequestId, stream_start, _Headers}} ->
-            consume(RequestId);
-        {http, {RequestId, stream, BinBodyPart}} ->
-            sister_pool:stream_message(BinBodyPart),
-            consume(RequestId);
-        {http, {RequestId, stream_end, _Headers}} ->
-            {ok, RequestId};
-        Other ->
-            metal:warning("Received unexpected message: ~n", [Other])
-    after
-        90000 ->
-            httpc:cancel_request(RequestId)
-    end.
+-spec ensure_deps (atom()) -> ok.
+ensure_deps(App) ->
+    ensure_loaded(App),
+    {ok, Deps} = application:get_key(App, applications),
+    lists:foreach(fun ensure_started/1, Deps),
+    ok.
+
+-spec ensure_started (atom()) -> ok.
+ensure_started(App) ->
+    case application:start(App) of
+        ok ->
+            ok;
+        {error, {already_started, App}} ->
+            ok
+    end.  
+
+%% ===================================================================
+%% Private functions
+%% ===================================================================
+
+-spec ensure_loaded (atom()) -> ok.
+ensure_loaded(App) ->
+    case application:load(App) of
+        ok ->
+            ok;
+        {error, {already_loaded, App}} ->
+            ok
+    end.  
